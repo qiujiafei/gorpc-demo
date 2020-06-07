@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"reflect"
+	"syscall"
 )
 
 //server 定义服务，发布服务，
@@ -153,4 +156,22 @@ func (s *Server) Register(sd *ServiceDesc, svr interface{}) {
 	}
 
 	s.service = ser
+}
+
+
+func (s *Server) Serve() {
+	s.service.Serve(s.opts)
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGSEGV)
+	<-ch
+
+	s.Close()
+}
+
+
+func (s *Server) Close() {
+	s.closing = false
+
+	s.service.Close()
 }
